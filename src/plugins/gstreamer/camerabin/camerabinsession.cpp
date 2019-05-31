@@ -546,8 +546,21 @@ GstElement *CameraBinSession::buildCameraSource()
                     g_object_set(G_OBJECT(m_cameraSrc), "video-source", m_videoSrc, NULL);
             }
 
-            if (m_videoSrc)
-                g_object_set(G_OBJECT(m_videoSrc), "device", m_inputDevice.toUtf8().constData(), NULL);
+            if (m_videoSrc) {
+                GstPipeline *pipeline = GST_PIPELINE(m_videoSrc);
+                if(pipeline) {
+                    GstIterator *it = gst_bin_iterate_sources(GST_BIN(pipeline));
+                    GValue value = G_VALUE_INIT;
+                    while (gst_iterator_next(it, &value) == GST_ITERATOR_OK) {
+                        GstElement *src = GST_ELEMENT (g_value_get_object (&value));
+                        g_object_set(G_OBJECT(src), "device", m_inputDevice.toUtf8().constData(), NULL);
+                        g_value_unset (&value);
+                    }
+                    gst_iterator_free (it);
+                } else {
+                    g_object_set(G_OBJECT(m_videoSrc), "device", m_inputDevice.toUtf8().constData(), NULL);
+                }
+	    }
 
         } else if (g_object_class_find_property(G_OBJECT_GET_CLASS(m_cameraSrc), "camera-device")) {
             if (m_inputDevice == QLatin1String("secondary")) {
