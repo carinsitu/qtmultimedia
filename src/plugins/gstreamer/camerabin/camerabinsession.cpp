@@ -514,8 +514,30 @@ GstElement *CameraBinSession::buildCameraSource()
                      QT_GSTREAMER_CAMERABIN_VIDEOSRC="somedriver=somevideosrc,somevideosrc2"
                 */
                 const QByteArray envVideoSource = qgetenv("QT_GSTREAMER_CAMERABIN_VIDEOSRC");
+                const QByteArray envVideoPipelineSource = qgetenv("QT_GSTREAMER_CAMERABIN_VIDEOSRC_PIPELINE");
 
-                if (!envVideoSource.isEmpty()) {
+                if (!envVideoPipelineSource.isEmpty()) {
+                    qDebug() << "Now I'm here, now I'm there…";
+                    qDebug() << "Camera driver: " << QGstUtils::cameraDriver(m_inputDevice, m_sourceFactory);
+                    const QList<QByteArray> sources = envVideoPipelineSource.split(';');
+                    for (const QByteArray &source : sources) {
+                        const QList<QByteArray> driverPipeline = source.split(':');
+                        if (driverPipeline.at(0) == QGstUtils::cameraDriver(m_inputDevice, m_sourceFactory)) {
+                            const QByteArray pipeline = driverPipeline.at(1);
+                            GError *error = NULL;
+                            GstElement *element = gst_parse_launch(pipeline, &error);
+
+                            if (error) {
+                                g_printerr("ERROR: %s: %s\n", pipeline.constData(), GST_STR_NULL(error->message));
+                                g_clear_error(&error);
+                            }
+                            if (element) {
+                                m_videoSrc = element;
+                                break;
+                            }
+                        }
+                    }
+                } else if (!envVideoSource.isEmpty()) {
                     const QList<QByteArray> sources = envVideoSource.split(',');
                     for (const QByteArray &source : sources) {
                         QList<QByteArray> keyValue = source.split('=');
