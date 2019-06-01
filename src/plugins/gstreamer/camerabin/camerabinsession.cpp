@@ -153,6 +153,7 @@ CameraBinSession::CameraBinSession(GstElementFactory *sourceFactory, QObject *pa
      m_videoEncoder(0),
      m_muxer(0)
 {
+    qDebug() << "Custom QtMultimedia CameraBinSession for CarInSitu";
     if (m_sourceFactory)
         gst_object_ref(GST_OBJECT(m_sourceFactory));
     m_camerabin = gst_element_factory_make(QT_GSTREAMER_CAMERABIN_ELEMENT_NAME, "camerabin");
